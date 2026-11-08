@@ -176,36 +176,135 @@
   }
 
   /* run */
+  var CHUNK_MB = 12, CHUNK_SEC = 480, TRIES = 3;
+
+  /* یک فایل یا تکه را به ایلون‌لبز می‌فرستد؛ در صورت قطع شدن تا ۳ بار دوباره تلاش می‌کند */
+  function send(blob, name, label) {
+    return new Promise(function (resolve, reject) {
+      var attempt = 0;
+      (function go() {
+        attempt++; uploaded = false;
+        var fd = new FormData();
+        fd.append('model_id', 'scribe_v2');
+        fd.append('file', blob, name);
+        fd.append('language_code', 'fas');
+        fd.append('diarize', 'true');
+        fd.append('num_speakers', '2');
+        fd.append('timestamps_granularity', 'word');
+        fd.append('tag_audio_events', 'false');
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://api.elevenlabs.io/v1/speech-to-text');
+        xhr.setRequestHeader('xi-api-key', key);
+        var pre = label ? label + ' — ' : '';
+        var retry = attempt > 1 ? ' (' + T.retry + ' ' + num(attempt) + ')' : '';
+        xhr.upload.onprogress = function (e) { if (e.lengthComputable) status('info', pre + T.uploading + ' ' + num(Math.round(e.loaded / e.total * 100)) + '%' + retry, e.loaded / e.total * 100); };
+        xhr.upload.onload = function () {
+          uploaded = true; clearInterval(timer);
+          var t0 = Date.now();
+          var tick = function () { var s = Math.round((Date.now() - t0) / 1000); status('info', pre + T.working + ' ' + num(Math.floor(s / 60)) + ':' + num(('0' + s % 60).slice(-2)) + ' — ' + T.dontClose, null); };
+          tick(); timer = setInterval(tick, 1000);
+        };
+        xhr.onload = function () {
+          clearInterval(timer);
+          if (xhr.status === 200) { try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject(T.errOther); } return; }
+          if (xhr.status >= 500 && attempt < TRIES) { setTimeout(go, 3000); return; }
+          reject(errorText(xhr.status, xhr.responseText));
+        };
+        xhr.onerror = function () {
+          clearInterval(timer);
+          if (attempt < TRIES) { status('info', pre + T.reconnect, null); setTimeout(go, 4000); return; }
+          reject(errorText(0) + (leftPage ? ' ' + T.errLeft : ''));
+        };
+        status('info', pre + T.uploading + retry, 0);
+        xhr.send(fd);
+      })();
+    });
+  }
+
+  /* ---------- حالت تکه‌تکه برای فایل‌های بلند ---------- */
+  function wav(samples, rate) {
+    var n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    function str(o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, n * 2, true);
+    for (var i = 0, o = 44; i < n; i++, o += 2) { var x = Math.max(-1, Math.min(1, samples[i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7fff, true); }
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+  /* نقطه‌ی برش را در کم‌صداترین لحظه‌ی نزدیک به مرز انتخاب می‌کند تا کلمه‌ای نصف نشود */
+  function quietCut(d, rate, target) {
+    var win = Math.round(rate * 0.25), span = rate * 20, best = target, bestE = Infinity;
+    for (var c = Math.max(win, target - span); c < Math.min(d.length - win, target + span); c += win) {
+      var e = 0; for (var i = c - win; i < c; i += 4) e += d[i] * d[i];
+      if (e < bestE) { bestE = e; best = c; }
+    }
+    return best;
+  }
+  function decode(f) {
+    var RATE = 16000;
+    return f.arrayBuffer().then(function (ab) {
+      var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      var ctx = new Ctx(1, RATE, RATE);
+      return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+    }).then(function (ab) {
+      var d = ab.getChannelData(0);
+      if (ab.numberOfChannels > 1) { var d2 = ab.getChannelData(1), m = new Float32Array(d.length); for (var i = 0; i < d.length; i++) m[i] = (d[i] + d2[i]) / 2; d = m; }
+      return { d: d, rate: ab.sampleRate };
+    });
+  }
+  /* گوینده‌های هر تکه را جداگانه به کوچ (C) و مراجع (K) نگاشت می‌کند، سپس همه را با زمان درست کنار هم می‌گذارد */
+  function merge(parts) {
+    var words = [];
+    parts.forEach(function (p) {
+      var turns = CoachCore.buildTurns(p.data), ids = {};
+      turns.forEach(function (t) { ids[t.s] = 1; });
+      var coach = CoachCore.detectCoach(turns);
+      if (Object.keys(ids).length === 1) {
+        var q = 0, w = 0; turns.forEach(function (t) { q += (t.t.match(/[؟?]/g) || []).length; w += t.t.split(/\s+/).length; });
+        coach = q / Math.max(w, 1) > 0.02 ? coach : null;
+      }
+      (p.data.words || []).forEach(function (x) {
+        var y = {}; for (var k in x) y[k] = x[k];
+        y.start = (x.start || 0) + p.offset; y.end = (x.end || 0) + p.offset;
+        if (x.type === 'word') y.speaker_id = x.speaker_id === coach ? 'C' : 'K';
+        words.push(y);
+      });
+      words.push({ type: 'spacing', text: ' ' });
+    });
+    return { words: words };
+  }
+  function runChunked() {
+    status('info', T.preparing, null);
+    return decode(file).then(function (a) {
+      var d = a.d, rate = a.rate, step = CHUNK_SEC * rate, cuts = [0];
+      while (d.length - cuts[cuts.length - 1] > step * 1.25) cuts.push(quietCut(d, rate, cuts[cuts.length - 1] + step));
+      cuts.push(d.length);
+      var total = cuts.length - 1, parts = [], i = 0;
+      function next() {
+        if (i >= total) return Promise.resolve(parts);
+        var a0 = cuts[i], a1 = cuts[i + 1], idx = i;
+        var blob = wav(d.subarray(a0, a1), rate);
+        var label = T.part + ' ' + num(idx + 1) + ' ' + T.of + ' ' + num(total);
+        return send(blob, 'part' + (idx + 1) + '.wav', label).then(function (data) {
+          parts.push({ data: data, offset: a0 / rate }); i++; return next();
+        });
+      }
+      return next();
+    }).then(merge);
+  }
+
   $('goBtn').addEventListener('click', function () {
-    var btn = this; btn.disabled = true; uploaded = false; busy = true; leftPage = false; lockOn();
+    var btn = this; btn.disabled = true; busy = true; leftPage = false; lockOn();
     $('resultCard').classList.add('hidden');
-    var fd = new FormData();
-    fd.append('model_id', 'scribe_v2');
-    fd.append('file', file);
-    fd.append('language_code', 'fas');
-    fd.append('diarize', 'true');
-    fd.append('num_speakers', '2');
-    fd.append('timestamps_granularity', 'word');
-    fd.append('tag_audio_events', 'false');
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://api.elevenlabs.io/v1/speech-to-text');
-    xhr.setRequestHeader('xi-api-key', key);
-    xhr.upload.onprogress = function (e) { if (e.lengthComputable) status('info', T.uploading + ' ' + num(Math.round(e.loaded / e.total * 100)) + '%', e.loaded / e.total * 100); };
-    xhr.upload.onload = function () {
-      uploaded = true;
-      var t0 = Date.now();
-      var tick = function () { var s = Math.round((Date.now() - t0) / 1000); status('info', T.working + ' ' + num(Math.floor(s / 60)) + ':' + num(('0' + s % 60).slice(-2)) + ' — ' + T.dontClose, null); };
-      tick(); timer = setInterval(tick, 1000);
-    };
-    xhr.onload = function () {
-      clearInterval(timer); btn.disabled = false; busy = false; lockOff();
-      if (xhr.status !== 200) { status('err', errorText(xhr.status, xhr.responseText)); return; }
-      try { raw = JSON.parse(xhr.responseText); } catch (e) { status('err', T.errOther); return; }
-      coachId = null; $('status').className = 'status'; render();
-    };
-    xhr.onerror = function () { clearInterval(timer); btn.disabled = false; busy = false; lockOff(); status('err', errorText(0) + (leftPage ? ' ' + T.errLeft : '')); };
-    status('info', T.uploading, 0);
-    xhr.send(fd);
+    var job = file.size > CHUNK_MB * 1048576
+      ? runChunked().catch(function (e) { if (typeof e === 'string') throw e; throw T.errDecode; })
+      : send(file, file.name, '');
+    job.then(function (data) {
+      raw = data; coachId = null; $('status').className = 'status'; render();
+    }).catch(function (msg) {
+      status('err', typeof msg === 'string' ? msg : T.errOther);
+    }).then(function () { clearInterval(timer); btn.disabled = false; busy = false; lockOff(); });
   });
 
   function render() {
