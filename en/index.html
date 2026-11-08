@@ -7,7 +7,11 @@
 <meta name="referrer" content="no-referrer">
 <title>Coaching Mentoring Session Transcript Generator</title>
 <meta name="description" content="Coaching Mentoring Session Transcript Generator">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fbf'/%3E%3Cpath d='M9 11h14M9 16h14M9 21h9' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/icon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<meta name="theme-color" content="#1f5fbf">
+<meta name="apple-mobile-web-app-title" content="Session Transcript">
 <style>
 @font-face{font-family:Vazirmatn;src:url("../assets/Vazirmatn.woff2") format("woff2");font-weight:100 900;font-display:swap}
 :root{
@@ -36,9 +40,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma
 .wrap{max-width:780px;margin:0 auto;padding:24px 16px 56px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .pill{font-size:13px;font-weight:500;background:rgba(255,255,255,.16);padding:4px 12px;border-radius:999px}
-.tbtns{display:flex;gap:8px}
+.tbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tbtns a,.tbtns button{white-space:nowrap}
+.pill{white-space:nowrap}
+@media (max-width:480px){.pill{display:none}.topbar{justify-content:flex-end}}
 .tbtns a,.tbtns button{font:inherit;font-size:13px;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 12px;text-decoration:none;cursor:pointer}
-h1{font-size:27px;font-weight:800;margin:18px 0 6px;line-height:1.5}
+h1{font-size:27px;font-weight:800;margin:0;line-height:1.5}
+.brand{display:flex;align-items:center;gap:14px;margin:18px 0 8px}
+.brand img{flex:none;border-radius:15px;box-shadow:0 0 0 2px rgba(255,255,255,.35),0 6px 18px rgba(0,0,0,.18)}
+@media (max-width:420px){.brand img{width:48px;height:48px;border-radius:13px}h1{font-size:23px}}
 .lead{margin:0;opacity:.92}
 .trust{margin-top:18px;display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:12px 14px;font-size:14px}
 .trust svg{flex:none;margin-top:3px}
@@ -153,7 +163,7 @@ html[lang=fa] .card ol{list-style-type:persian}
 <div class="top"><div class="wrap">
   <div class="topbar"><span class="pill">Free tool for coaches</span>
     <div class="tbtns"><a href="#guide">Full guide</a><a href="../" lang="fa">فارسی</a><button id="themeBtn" type="button">Dark / Light</button></div></div>
-  <h1>Coaching Mentoring Session Transcript Generator</h1>
+  <div class="brand"><img src="../assets/logo.svg" width="56" height="56" alt=""><h1>Coaching Mentoring Session Transcript Generator</h1></div>
   <p class="lead">Upload a recorded session and get a complete, time-stamped transcript, split into coach and client, in the mentor’s Word template.</p>
   <div class="trust"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><div>Your audio goes straight from your own device to ElevenLabs and is never sent to any other server, including the maker of this page. The Word file is built on your own device.</div></div>
 </div></div>
