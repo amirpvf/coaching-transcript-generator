@@ -128,12 +128,31 @@ footer ul{padding-inline-start:20px;margin:6px 0 14px}
 .credit{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .credit a{color:var(--brand);font-weight:700}
 .hidden{display:none!important}
+
+.toc{background:var(--bg);border-radius:12px;padding:12px 16px;margin-bottom:6px;font-size:14px}
+.toc ol{margin:6px 0 0;padding-inline-start:22px;columns:2;column-gap:24px}
+@media (max-width:520px){.toc ol{columns:1}}
+.toc a{color:var(--brand);text-decoration:none}
+.gsec{margin-top:10px}
+.gsec .tech{padding:0 16px 14px}
+.gsec ol,.gsec ul{padding-inline-start:22px}
+.gsec li{margin-bottom:6px;color:var(--muted)}
+.gsec li strong,.gsec p strong{color:var(--ink)}
+.tblx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ttable{border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+.ttable th{position:static;background:var(--brand-soft);color:var(--ink);text-align:start}
+.ttable td{color:var(--muted)}
+.ttable td:first-child{color:var(--ink);font-weight:500;width:42%}
+.notebox{background:var(--brand-soft);border-radius:12px;padding:12px 14px;font-size:14px;margin-top:12px}
+.guidelink{color:#fff;opacity:.95}
+html[lang=fa] .card ol{list-style-type:persian}
+.notebox a,.tech a{color:var(--brand);font-weight:500}
 </style>
 </head>
 <body>
 <div class="top"><div class="wrap">
   <div class="topbar"><span class="pill">Free tool for coaches</span>
-    <div class="tbtns"><a href="../" lang="fa">فارسی</a><button id="themeBtn" type="button">Dark / Light</button></div></div>
+    <div class="tbtns"><a href="#guide">Full guide</a><a href="../" lang="fa">فارسی</a><button id="themeBtn" type="button">Dark / Light</button></div></div>
   <h1>Coaching Mentoring Session Transcript Generator</h1>
   <p class="lead">Upload a recorded session and get a complete, time-stamped transcript, split into coach and client, in the mentor’s Word template.</p>
   <div class="trust"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><div>Your audio goes straight from your own device to ElevenLabs and is never sent to any other server, including the maker of this page. The Word file is built on your own device.</div></div>
@@ -157,12 +176,14 @@ footer ul{padding-inline-start:20px;margin:6px 0 14px}
 
   <section class="card">
     <h2><span class="num">2</span>Session file</h2>
-    <p class="sub">A phone recording or any audio/video file. A one-hour session usually takes two to five minutes.</p>
+    <p class="sub">A phone recording or any audio/video file. A one-hour session usually takes 3–10 minutes, depending on your connection.</p>
     <label class="drop" id="drop"><input id="fileIn" type="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.opus,.aac,.mp4,.webm">
       <strong id="dropTitle">Choose audio file</strong><span id="dropSub">Tap to choose</span></label>
     <label for="coachIn">Coach name (optional)</label>
     <input id="coachIn" type="text" placeholder="e.g. Maryam">
     <p class="hint">Used only in the Word file name.</p>
+    <div class="notebox">🌐 <strong>Connecting from Iran?</strong> Opening this page needs no VPN, but <strong>turn your VPN on before pressing the button below</strong> and keep it on until the result appears — the audio goes straight to ElevenLabs, which blocks Iranian IP addresses.</div>
+    <div class="notebox hidden" id="chunkNote">✂️ <strong>This is a long file, so it will be sent in parts.</strong> The tool splits it on your device into parts of about 8 minutes, at moments of silence, and sends them one by one. If the connection drops, only that part is resent — not the whole file — so neither the work nor your allowance is wasted. The parts are then joined with correct times into one complete transcript. <a href="#g-chunks">More</a></div>
     <button class="btn btn-primary btn-block" id="goBtn" type="button" disabled>Create transcript</button>
     <p class="hint" style="text-align:center">⚠️ Until the result appears, stay on this page: don’t switch apps or lock your screen. Long files are split into parts automatically, so a dropped connection only resends that part.</p>
     <div class="status" id="status" role="status" aria-live="polite"><div id="statusText"></div><div class="bar" id="bar"><i id="barFill"></i></div></div>
@@ -179,6 +200,78 @@ footer ul{padding-inline-start:20px;margin:6px 0 14px}
     <div class="actions"><button class="btn btn-primary" id="dlBtn" type="button">Download Word file</button><button class="btn btn-ghost" id="swapBtn" type="button">Swap coach and client</button></div>
     <div class="review" id="reviewBox"><h3>Check these words against the audio</h3><p style="margin:0 0 8px">The speech engine was less confident about these words. They are <mark>highlighted in yellow</mark> in the text below, each with its time in the recording so you can find it quickly.</p><div class="chips" id="chips" dir="rtl"></div></div>
     <div class="tablewrap"><table><thead><tr><th>Time</th><th>Speaker</th><th>Text</th></tr></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+
+  <section class="card" id="guide">
+    <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--brand)"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Complete guide</h2>
+    <p class="sub">Everything about this tool, from recording a session to handing the file to your mentor. Tap a section to open it.</p>
+    <nav class="toc"><strong>Contents</strong><ol><li><a href="#g-what">What this tool does — and doesn’t</a></li><li><a href="#g-needs">What you need</a></li><li><a href="#g-quota">ElevenLabs free allowance and costs</a></li><li><a href="#g-vpn">VPN: when it’s needed and why</a></li><li><a href="#g-record">Recording tips for the best result</a></li><li><a href="#g-iphone">Finding your recording on an iPhone</a></li><li><a href="#g-steps">Step by step</a></li><li><a href="#g-chunks">Why long files are sent in parts</a></li><li><a href="#g-review">Reviewing before you send it to your mentor</a></li><li><a href="#g-trouble">Common problems</a></li><li><a href="#g-faq">Frequently asked questions</a></li></ol></nav>
+    <details class="gsec" id="g-what"><summary>What this tool does — and doesn’t</summary><div class="tech">
+<p>The tool takes the audio of a coaching session and gives you a Word file in the mentor’s exact table template: four columns — time, speaker, text and competency. The last column stays empty for the mentor.</p>
+<h4>Done automatically</h4>
+<ul><li>Full, word-for-word speech-to-text, with nothing summarised</li><li>Two-speaker separation, deciding who is coach and who is client</li><li>The start time of every turn</li><li>Persian typography fixes: zero-width non-joiners after «می» and «نمی», tanvin on words such as «مثلاً», no space before punctuation, cut-off words shown as «...»</li><li>Words the engine was unsure about are highlighted in yellow</li></ul>
+<h4>Not done</h4>
+<ul><li>No ICF competency analysis — that is the mentor’s job</li><li>No meaning-based correction of misheard words — the final review is yours</li><li>Nothing is saved: closing the page clears the transcript, so always download the Word file</li></ul></div></details><details class="gsec" id="g-needs"><summary>What you need</summary><div class="tech">
+<ul><li><strong>Device:</strong> phone, tablet or computer. For sessions over an hour, a computer or iPad is safer because of memory.</li>
+<li><strong>Browser:</strong> Safari or Chrome. If you opened the link inside Telegram, use its menu to open it in your browser; Telegram’s built-in browser may fail to download the Word file or keep your key.</li>
+<li><strong>VPN:</strong> required if you are in Iran — see the VPN section.</li>
+<li><strong>ElevenLabs account and key:</strong> free; the illustrated steps are in box 1.</li>
+<li><strong>The recording:</strong> common formats such as m4a, mp3, wav, ogg and even video (mp4).</li></ul></div></details><details class="gsec" id="g-quota"><summary>ElevenLabs free allowance and costs</summary><div class="tech">
+<p>Each free ElevenLabs account includes <strong>4 hours 30 minutes</strong> of speech-to-text a month — roughly <strong>four one-hour sessions</strong>.</p>
+<h4>Worth knowing</h4>
+<ul><li><strong>Usage is counted by audio length,</strong> not file size. A 52-minute session uses 52 minutes.</li>
+<li><strong>The allowance renews monthly;</strong> your account page shows the date.</li>
+<li><strong>If a file is fully uploaded but the connection drops before the result comes back, it still counts.</strong> That is why long files are sent in parts — a drop only wastes one short part.</li>
+<li><strong>Checking what’s left:</strong> on the ElevenLabs site, tap your account name at the bottom of the left menu.</li>
+<li><strong>Test with a short file.</strong> A two- or three-minute clip is enough to try the tool.</li>
+<li><strong>Don’t create several free accounts.</strong> It breaks ElevenLabs’ rules and its abuse detection may block them.</li></ul>
+<h4>If the free allowance isn’t enough</h4>
+<p>Paid plans include more: for example Starter has 27 hours a month and Creator 100 hours, with extra hours at about $0.22 each. Paid plans are also free of the free-tier VPN restriction. See the ElevenLabs site for current prices.</p></div></details><details class="gsec" id="g-vpn"><summary>VPN: when it’s needed and why</summary><div class="tech">
+<ul><li><strong>Opening this page:</strong> no VPN needed — it is hosted on GitHub, which is reachable from Iran.</li>
+<li><strong>Creating your ElevenLabs account and key:</strong> VPN needed.</li>
+<li><strong>Pressing “Create transcript”:</strong> VPN needed, because the audio goes straight to ElevenLabs, which blocks Iranian IP addresses. <strong>Turn it on before pressing the button and keep it on until the result appears.</strong></li>
+<li><strong>Downloading the Word file:</strong> no internet needed; it is built on your device.</li></ul>
+<h4>One restriction to know about</h4>
+<p>On free accounts, ElevenLabs sometimes flags busy VPN IP addresses as unusual and blocks free use for that connection; you’ll see a specific message. Try another VPN server. If it keeps happening, only a paid plan avoids it.</p>
+<p><strong>Use a stable VPN</strong> — repeated disconnects are the most common reason a result gets lost.</p></div></details><details class="gsec" id="g-record"><summary>Recording tips for the best result</summary><div class="tech">
+<ul><li>Record in a quiet room; TV, air conditioning or street noise lowers accuracy.</li>
+<li>In person, place the phone between you, close to both speakers.</li>
+<li>Online, use the call app’s own recording if possible; it beats recording a phone speaker.</li>
+<li>Avoid talking over each other; overlapping speech hurts both accuracy and speaker separation.</li>
+<li>Start by asking the client’s consent to record — it is an ethical requirement and also helps the tool identify the coach, who usually asks more questions.</li>
+<li>Say names clearly; proper names are the most often misheard words.</li></ul></div></details><details class="gsec" id="g-iphone"><summary>Finding your recording on an iPhone</summary><div class="tech">
+<ol><li>In Voice Memos, tap the session.</li><li>Tap the three-dot or share button and choose “Save to Files”.</li><li>On this page tap “Choose audio file” and pick it from Files.</li></ol>
+<p>If the file is in Telegram, save it to Files first, then pick it from there.</p></div></details><details class="gsec" id="g-steps"><summary>Step by step</summary><div class="tech">
+<ol><li>Save your key once in box 1.</li><li>Choose the session file and, if you like, enter the coach’s name (used only in the file name).</li><li>If you are in Iran, turn on your VPN.</li><li>Press “Create transcript”.</li><li>Stay on the page until the result appears: don’t switch apps or lock the screen. The tool keeps the screen awake where it can.</li><li>Typical time: under a minute for a short file; usually 3–10 minutes for a one-hour session, depending on your connection.</li><li>If coach and client are reversed, press “Swap coach and client”.</li><li>Download the Word file and make sure it is saved before closing the page.</li></ol></div></details><details class="gsec" id="g-chunks"><summary>Why long files are sent in parts</summary><div class="tech">
+<p>A one-hour session is usually 50–100 MB. Sending it in one go over a VPN takes minutes, and a single blip loses the whole job — sometimes after the allowance has already been used.</p>
+<h4>So files over 12 MB are sent like this:</h4>
+<ol><li>The file is opened on your own device and split into parts of about 8 minutes.</li><li>Cuts are placed in moments of silence so no word is cut in half.</li><li>Parts are sent one at a time — you’ll see “Part 2 of 7”.</li><li>If the connection drops, only that part is resent automatically, up to three times.</li><li>The parts are then joined with correct times, and coach and client are identified within each part.</li></ol>
+<p>The result is the same as sending the whole file, and it uses the same allowance, which is counted by audio length.</p>
+<p><strong>Note:</strong> opening and splitting a very long file needs a lot of memory. If an older phone shows a file-opening error, try a computer or iPad.</p></div></details><details class="gsec" id="g-review"><summary>Reviewing before you send it to your mentor</summary><div class="tech">
+<ul><li><strong>Yellow words:</strong> check each against the audio; its time in the recording is shown next to it.</li>
+<li><strong>Names:</strong> check them; proper names are the most error-prone.</li>
+<li><strong>Pauses and fillers</strong> (such as «اِ» and «امم») are kept on purpose, because the transcript must be complete and word-for-word.</li>
+<li><strong>English words</strong> spoken in the session stay in English letters.</li>
+<li><strong>Editing:</strong> it is an ordinary Word file — make any changes directly. Leave the competency column empty for the mentor.</li></ul></div></details><details class="gsec" id="g-trouble"><summary>Common problems</summary><div class="tech">
+<div class="tblx"><table class="ttable">
+<tr><th>Problem or message</th><th>Cause and fix</th></tr>
+<tr><td>“Create transcript” is greyed out</td><td>No key saved or no file chosen.</td></tr>
+<tr><td>“The key was rejected”</td><td>Remove it and paste it again; make sure it has Speech to Text access and no extra spaces.</td></tr>
+<tr><td>“Free-tier use blocked for this connection”</td><td>Your VPN IP was flagged. Try another server or VPN.</td></tr>
+<tr><td>“Could not connect”</td><td>VPN off or no internet.</td></tr>
+<tr><td>“Connection dropped before the result arrived”</td><td>VPN dropped or you left the page. Retry on a steadier connection and stay on the page.</td></tr>
+<tr><td>“Allowance used up”</td><td>Wait for the monthly renewal or upgrade.</td></tr>
+<tr><td>“This browser could not open the long file”</td><td>Not enough memory; use a computer or iPad.</td></tr>
+<tr><td>Coach and client reversed</td><td>Press “Swap coach and client”.</td></tr>
+<tr><td>The Word file won’t download</td><td>If you’re in Telegram, open the page in Safari or Chrome.</td></tr>
+<tr><td>The key disappears every time</td><td>Private browsing doesn’t keep it; use a normal window.</td></tr>
+</table></div></div></details><details class="gsec" id="g-faq"><summary>Frequently asked questions</summary><div class="tech">
+<h4>Can several people use it at once?</h4><p>Yes, any number. There is no server; it runs separately on each person’s device. Each person should use their own key.</p>
+<h4>Can I share my key with a classmate?</h4><p>Not recommended: your allowance gets split, and the key is like a password.</p>
+<h4>Does it work for English sessions?</h4><p>Not yet — it is set up for Persian sessions and the mentor’s Persian Word template.</p>
+<h4>If I close the page, is the transcript lost?</h4><p>Yes. It only exists while the page is open; always download the Word file.</p>
+<h4>Do I need Claude or another paid AI subscription?</h4><p>No. Only an ElevenLabs account is needed; all processing and the Word file happen inside the page.</p>
+<h4>How accurate is it?</h4><p>Very accurate in our tests on Persian sessions, but no tool is perfect — take the yellow-word review seriously.</p></div></details>
   </section>
 
   <section class="card">

@@ -132,6 +132,10 @@
     document.documentElement.setAttribute('data-theme', next); store('set', 'theme', next);
   });
 
+  /* لینک‌های داخل راهنما، بخش مقصد را باز می‌کنند */
+  function openHash() { var h = location.hash; if (!h) return; var el = document.querySelector(h); if (el && el.tagName === 'DETAILS') el.open = true; }
+  window.addEventListener('hashchange', openHash); openHash();
+
   /* key */
   function showKey() {
     $('keyForm').classList.toggle('hidden', !!key);
@@ -151,6 +155,7 @@
   $('fileIn').addEventListener('change', function () {
     file = (this.files && this.files[0]) || null;
     $('drop').classList.toggle('has', !!file);
+    $('chunkNote').classList.toggle('hidden', !(file && file.size > 12 * 1048576));
     $('dropTitle').textContent = file ? file.name : T.pickFile;
     $('dropSub').textContent = file ? num((file.size / 1048576).toFixed(1)) + ' ' + T.mb : T.tapToPick;
     updateGo();
