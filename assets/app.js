@@ -113,7 +113,10 @@
 /* رابط کاربری — مشترک بین نسخه‌ی فارسی و انگلیسی. متن‌ها از window.T می‌آیند. */
 (function () {
   var T = window.T;
-  var KEY_NAME = 'el_key_v1', key = '', file = null, raw = null, result = null, coachId = null, timer = null;
+  var KEY_NAME = 'el_key_v1', key = '', file = null, raw = null, result = null, coachId = null, timer = null, uploaded = false, busy = false, wl = null, leftPage = false;
+  function lockOn() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wl = l; }).catch(function () {}); } catch (e) {} }
+  function lockOff() { try { if (wl) wl.release(); } catch (e) {} wl = null; }
+  document.addEventListener('visibilitychange', function () { if (busy && document.hidden) leftPage = true; if (busy && !document.hidden) lockOn(); });
   var $ = function (id) { return document.getElementById(id); };
   var DIG = '۰۱۲۳۴۵۶۷۸۹';
   function num(s) { return T.faDigits ? String(s).replace(/\d/g, function (d) { return DIG[d]; }) : String(s); }
@@ -163,17 +166,18 @@
     if (pct != null) $('barFill').style.width = pct + '%';
   }
   function errorText(code, body) {
-    var msg = ''; try { var j = JSON.parse(body); msg = (j.detail && (j.detail.message || j.detail.status)) || ''; } catch (e) {}
-    if (code === 401) return T.err401;
+    var msg = '', st = ''; try { var j = JSON.parse(body); st = (j.detail && j.detail.status) || ''; msg = (j.detail && (j.detail.message || j.detail.status)) || ''; } catch (e) {}
+    if (st === 'detected_unusual_activity' || /unusual activity|proxy|vpn/i.test(msg)) return T.errFlag;
+    if (code === 401) return T.err401 + (msg ? ' [' + msg + ']' : '');
     if (code === 402 || /quota|credit|limit/i.test(msg)) return T.errQuota;
     if (code === 413) return T.errSize;
-    if (code === 0) return T.errNet;
+    if (code === 0) return uploaded ? T.errLost : T.errNet;
     return T.errOther + ' (' + code + ') ' + msg;
   }
 
   /* run */
   $('goBtn').addEventListener('click', function () {
-    var btn = this; btn.disabled = true;
+    var btn = this; btn.disabled = true; uploaded = false; busy = true; leftPage = false; lockOn();
     $('resultCard').classList.add('hidden');
     var fd = new FormData();
     fd.append('model_id', 'scribe_v2');
@@ -188,17 +192,18 @@
     xhr.setRequestHeader('xi-api-key', key);
     xhr.upload.onprogress = function (e) { if (e.lengthComputable) status('info', T.uploading + ' ' + num(Math.round(e.loaded / e.total * 100)) + '%', e.loaded / e.total * 100); };
     xhr.upload.onload = function () {
+      uploaded = true;
       var t0 = Date.now();
       var tick = function () { var s = Math.round((Date.now() - t0) / 1000); status('info', T.working + ' ' + num(Math.floor(s / 60)) + ':' + num(('0' + s % 60).slice(-2)) + ' — ' + T.dontClose, null); };
       tick(); timer = setInterval(tick, 1000);
     };
     xhr.onload = function () {
-      clearInterval(timer); btn.disabled = false;
+      clearInterval(timer); btn.disabled = false; busy = false; lockOff();
       if (xhr.status !== 200) { status('err', errorText(xhr.status, xhr.responseText)); return; }
       try { raw = JSON.parse(xhr.responseText); } catch (e) { status('err', T.errOther); return; }
       coachId = null; $('status').className = 'status'; render();
     };
-    xhr.onerror = function () { clearInterval(timer); btn.disabled = false; status('err', errorText(0)); };
+    xhr.onerror = function () { clearInterval(timer); btn.disabled = false; busy = false; lockOff(); status('err', errorText(0) + (leftPage ? ' ' + T.errLeft : '')); };
     status('info', T.uploading, 0);
     xhr.send(fd);
   });
