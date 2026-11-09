@@ -132,6 +132,31 @@
     document.documentElement.setAttribute('data-theme', next); store('set', 'theme', next);
   });
 
+  /* بزرگ‌نمایی تصویرهای راهنما */
+  var lb = null;
+  function closeLB() { if (lb && lb.classList.contains('show')) { lb.classList.remove('show', 'big'); document.body.style.overflow = ''; if (lb._from) lb._from.focus(); } }
+  function openLB(src, alt, from) {
+    if (!lb) {
+      lb = document.createElement('div'); lb.className = 'lb'; lb.dir = 'ltr';
+      lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true');
+      lb.innerHTML = '<button class="lb-x" type="button">×</button><img alt=""><div class="lb-hint"></div>';
+      lb.querySelector('.lb-x').setAttribute('aria-label', T.close);
+      lb.querySelector('.lb-hint').textContent = T.lbHint;
+      lb.addEventListener('click', function (e) { if (e.target.tagName === 'IMG') { lb.classList.toggle('big'); return; } closeLB(); });
+      document.body.appendChild(lb);
+    }
+    var im = lb.querySelector('img'); im.src = src; im.alt = alt || '';
+    lb._from = from; lb.classList.remove('big'); lb.classList.add('show');
+    if (window.innerWidth < 700) lb.classList.add('big');   /* روی گوشی تصویر پهن را بزرگ و قابل اسکرول نشان بده */
+    lb.scrollLeft = 0; lb.scrollTop = 0;
+    document.body.style.overflow = 'hidden'; lb.querySelector('.lb-x').focus();
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLB(); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.zoom') : null;
+    if (b) { e.preventDefault(); openLB(b.getAttribute('data-full'), (b.querySelector('img') || {}).alt, b); }
+  });
+
   /* لینک‌های داخل راهنما، بخش مقصد را باز می‌کنند */
   function openHash() { var h = location.hash; if (!h) return; var el = document.querySelector(h); if (el && el.tagName === 'DETAILS') el.open = true; }
   window.addEventListener('hashchange', openHash); openHash();
