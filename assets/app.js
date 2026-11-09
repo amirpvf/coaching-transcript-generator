@@ -113,7 +113,10 @@
 /* رابط کاربری — مشترک بین نسخه‌ی فارسی و انگلیسی. متن‌ها از window.T می‌آیند. */
 (function () {
   var T = window.T;
-  var KEY_NAME = 'el_key_v1', key = '', file = null, raw = null, result = null, coachId = null, timer = null, uploaded = false, busy = false, wl = null, leftPage = false;
+  var KEY_NAME = 'el_key_v1', key = '', file = null, raw = null, result = null, coachId = null, timer = null, uploaded = false, busy = false, wl = null, leftPage = false, downloaded = false;
+  /* هشدار مرورگر اگر متن ساخته شده ولی دانلود نشده، یا هنوز در حال ساخت است */
+  window.addEventListener('beforeunload', function (e) { if (busy || (result && !downloaded)) { e.preventDefault(); e.returnValue = ''; return ''; } });
+  function markDownloaded(v) { downloaded = v; $('keepBox').classList.toggle('done', v); $('dlOk').classList.toggle('hidden', !v); if (v) $('dlOk').textContent = T.downloaded; }
   function lockOn() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wl = l; }).catch(function () {}); } catch (e) {} }
   function lockOff() { try { if (wl) wl.release(); } catch (e) {} wl = null; }
   document.addEventListener('visibilitychange', function () { if (busy && document.hidden) leftPage = true; if (busy && !document.hidden) lockOn(); });
@@ -339,6 +342,7 @@
 
   function render() {
     result = CoachCore.process(raw, coachId);
+    markDownloaded(false);
     coachId = result.coach;
     var low = [];
     result.rows.forEach(function (r) { r.low.forEach(function (l) { if (l.w.replace(/[.،؟!?,]/g, '').length > 1) low.push(l); }); });
@@ -378,6 +382,7 @@
         a.href = URL.createObjectURL(blob); a.download = name + '.docx';
         document.body.appendChild(a); a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+        markDownloaded(true);
       })
       .catch(function (e) { alert(T.errDocx + ' ' + e.message); });
   });
