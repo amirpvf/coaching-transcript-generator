@@ -45,6 +45,7 @@
     var add = function (k, n) { stats[k] = (stats[k] || 0) + n; };
     t = t.replace(/\s+/g, ' ').trim();
     t = t.replace(/\s*--+/g, function () { add('cut', 1); return '...'; });
+    t = t.replace(/([^\s\-])-(?=\s|$)/g, function (m, c) { add('cut', 1); return c + '...'; });
     TANVIN.forEach(function (a) {
       t = t.replace(new RegExp(NB + a + '(?!ً)' + NA, 'g'), function () { add('tanvin', 1); return a + 'ً'; });
     });
